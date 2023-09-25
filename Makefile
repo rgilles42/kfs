@@ -25,12 +25,18 @@ asm:
 link:
 	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) target/boot.o target/x86/debug/$(KLIB) # TODO debug ?
 
+mkiso: $(NAME)
+	cp $(NAME) isodir/boot/kfs.bin
+	grub-mkrescue -o kfs.iso isodir
+
 clean:
 	$(CARGO) clean
+	rm -f target/boot.o
 	rm -f $(NAME)
+	rm -f kfs.iso
 
-run: $(NAME)
-	$(QEMU) -kernel $(NAME) -no-reboot
+run: mkiso
+	$(QEMU) -cdrom kfs.iso -no-reboot
 
 run_debug: $(NAME)
 	$(QEMU) -kernel $(NAME) -s -S -no-reboot -d int,cpu_reset

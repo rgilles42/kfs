@@ -1,6 +1,3 @@
-.weak kmain
-.globl start
-
 .set MODULEALIGN, (1<<0)
 .set MEMINFO, (1<<1)
 .set FLAGS, MODULEALIGN | MEMINFO
@@ -15,20 +12,25 @@ MultiBootHeader:
   .long FLAGS
   .long CHECKSUM
 
+.section .bss
+.align 16
+stack_bottom:
+.skip 16384 # 16 KiB
+stack_ptr:
+
 .section .text
+.global start
+.type start,@function
+.weak kmain
 
 start:
   movl $stack_ptr, %esp
-  push %eax
-  push %ebx
-  //call kmain
+  //push %eax
+  //push %ebx
+  call kmain
   cli
+1:hlt
+  jmp 1b
 
-hang:
-  hlt
-  jmp hang
-
-stack:
-  .skip STACKSIZE
-stack_ptr:
+.size start, . - start
 
