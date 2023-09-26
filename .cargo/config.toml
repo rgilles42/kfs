@@ -1,9 +1,5 @@
-
 [unstable]
 build-std = ["core"]
 
 [build]
 target="src/arch/x86/x86.json"
-
-[target.x86_64-unknown-linux-gnu]
-runner="scripts/run.sh"
