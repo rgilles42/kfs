@@ -1,5 +1,5 @@
-#![no_main]
 #![no_std]
+#![no_main]
 
 use core::panic::PanicInfo;
 use core::arch::asm;
@@ -9,15 +9,10 @@ fn panic(_panic: &PanicInfo) -> ! {
     loop {}
 }
 
-#[no_mangle]
-fn testfunc() -> u32 {
-    0x12345678
-}
-
 
 #[no_mangle]
 #[allow(unused_results)] // TODO remove and handle correctly
-fn kmain() -> ! {
+pub extern "C" fn kmain() -> ! {
     unsafe {
         asm!("cli");
     }

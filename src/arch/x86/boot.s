@@ -21,7 +21,6 @@ stack_ptr:
 .section .text
 .global start
 .type start,@function
-.weak kmain
 
 start:
   movl $stack_ptr, %esp

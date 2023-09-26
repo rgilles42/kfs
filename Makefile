@@ -38,6 +38,9 @@ clean:
 run: mkiso
 	$(QEMU) -cdrom kfs.iso -no-reboot
 
+run_kernel: $(NAME)
+	$(QEMU) -kernel $(NAME) -no-reboot
+
 run_debug: $(NAME)
 	$(QEMU) -kernel $(NAME) -s -S -no-reboot -d int,cpu_reset
 
