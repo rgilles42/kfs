@@ -1,4 +1,4 @@
-.weak kmain
+.globl kmain
 .globl start
 
 .set MODULEALIGN, (1<<0)
@@ -21,7 +21,7 @@ start:
   movl $stack_ptr, %esp
   push %eax
   push %ebx
-  //call kmain
+  call kmain
   cli
 
 hang:
