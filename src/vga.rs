@@ -70,15 +70,17 @@ const VGA_BUFFER_ADDR : u32 = 0xb8000;
 struct Writer {
 	current_colour_pair: ColourPair,
 	buffer: &'static mut Buffer,
+	current_col: usize,
 	pos_in_col: usize,
 }
 
 impl Writer {
 	pub fn new(current_colour_pair: ColourPair) -> Self {
 		Writer {
-    		current_colour_pair,
+			current_colour_pair,
 			buffer: unsafe { &mut *(VGA_BUFFER_ADDR as *mut Buffer)},
-    		pos_in_col: 0,
+			current_col: 0,
+			pos_in_col: 0,
 		}
 	}
 	fn write_byte(&mut self, byte: u8) {
@@ -88,7 +90,7 @@ impl Writer {
 				if self.pos_in_col >= VGA_BUFFER_WIDTH {
 					self.new_line();
 				}
-				self.buffer.chars[VGA_BUFFER_HEIGHT - 1][self.pos_in_col] = VGAChar {
+				self.buffer.chars[self.current_col][self.pos_in_col] = VGAChar {
 					ascii_char: byte,
 					colour_pair: self.current_colour_pair,
 				};
@@ -97,17 +99,21 @@ impl Writer {
 		}
 	}
 	fn new_line(&mut self) {
-		let blank = VGAChar {
-			ascii_char: b' ',
-			colour_pair: self.current_colour_pair,
-		};
-		for row in 1..VGA_BUFFER_HEIGHT {
-			for col in 0..VGA_BUFFER_WIDTH {
-				self.buffer.chars[row - 1][col] = self.buffer.chars[row][col];
+		if self.current_col < VGA_BUFFER_HEIGHT - 1 {
+			self.current_col += 1;
+		} else {
+			let blank = VGAChar {
+				ascii_char: b' ',
+				colour_pair: self.current_colour_pair,
+			};
+			for row in 0..VGA_BUFFER_HEIGHT - 1 {
+				for col in 0..VGA_BUFFER_WIDTH {
+					self.buffer.chars[row][col] = self.buffer.chars[row + 1][col];
+				}
 			}
-		}
-		for col in 0..VGA_BUFFER_WIDTH {
-			self.buffer.chars[VGA_BUFFER_HEIGHT - 1][col] = blank;
+			for col in 0..VGA_BUFFER_WIDTH {
+				self.buffer.chars[VGA_BUFFER_HEIGHT - 1][col] = blank;
+			}
 		}
 		self.pos_in_col = 0;
 	}
