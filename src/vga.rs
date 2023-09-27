@@ -14,8 +14,19 @@ macro_rules! print {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-	let mut writer = Writer::new(ColourPair::new(Colour::White, Colour::Black));
-	writer.write_fmt(args).unwrap();
+	let mut vga = VGA {
+		buffer: unsafe { &mut *(VGA_BUFFER_ADDR as *mut VGABuffer) },
+		current_row: 0,
+		pos_in_row: 0
+	};
+	vga.write_fmt(args).unwrap();
+}
+
+impl fmt::Write for VGA {
+	fn write_str(&mut self, s: &str) -> fmt::Result {
+		self.printstr(s, ColourPair::new(Colour::White, Colour::Black));
+		Ok(())
+	}
 }
 
 #[allow(dead_code)]
@@ -61,73 +72,79 @@ const VGA_BUFFER_HEIGHT: usize = 25;
 const VGA_BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
-struct Buffer {
+struct VGABuffer {
 	chars: [[VGAChar; VGA_BUFFER_WIDTH]; VGA_BUFFER_HEIGHT],
+}
+
+impl VGABuffer {
+	pub fn read(&self, row: usize, col: usize) -> VGAChar {
+		unsafe {
+			core::ptr::read_volatile(
+				&self.chars[row][col] as *const VGAChar,
+			)
+		}
+	}
+	pub fn write(&mut self, row: usize, col: usize, vgachar: VGAChar) {
+		unsafe {
+			core::ptr::write_volatile(
+				&mut self.chars[row][col] as *mut VGAChar,
+				vgachar
+			);
+		}
+	}
 }
 
 const VGA_BUFFER_ADDR : u32 = 0xb8000;
 
-struct Writer {
-	current_colour_pair: ColourPair,
-	buffer: &'static mut Buffer,
-	current_col: usize,
-	pos_in_col: usize,
+struct VGA {
+	buffer: &'static mut VGABuffer,
+	current_row: usize,
+	pos_in_row: usize,
 }
 
-impl Writer {
-	pub fn new(current_colour_pair: ColourPair) -> Self {
-		Writer {
-			current_colour_pair,
-			buffer: unsafe { &mut *(VGA_BUFFER_ADDR as *mut Buffer)},
-			current_col: 0,
-			pos_in_col: 0,
-		}
-	}
-	fn write_byte(&mut self, byte: u8) {
-		match byte {
-			b'\n' => self.new_line(),
-			byte => {
-				if self.pos_in_col >= VGA_BUFFER_WIDTH {
-					self.new_line();
-				}
-				self.buffer.chars[self.current_col][self.pos_in_col] = VGAChar {
-					ascii_char: byte,
-					colour_pair: self.current_colour_pair,
-				};
-				self.pos_in_col += 1;
+impl VGA {
+	pub fn printstr(&mut self, s: &str, colour_pair: ColourPair) {
+		for byte in s.bytes() {
+			match byte {
+				0x20..=0x7e | b'\n' => self.write_byte(byte, colour_pair),
+				_ => self.write_byte(0xfe, colour_pair),
 			}
 		}
 	}
-	fn new_line(&mut self) {
-		if self.current_col < VGA_BUFFER_HEIGHT - 1 {
-			self.current_col += 1;
+	fn write_byte(&mut self, byte: u8, colour_pair: ColourPair) {
+		match byte {
+			b'\n' => self.new_line(colour_pair),
+			byte => {
+				if self.pos_in_row >= VGA_BUFFER_WIDTH {
+					self.new_line(colour_pair);
+				}
+				self.buffer.write(self.current_row, self.pos_in_row,
+					VGAChar {
+						ascii_char: byte,
+						colour_pair: colour_pair,
+					}
+				);
+				self.pos_in_row += 1;
+			}
+		}
+	}
+	fn new_line(&mut self, colour_pair: ColourPair) {
+		if self.current_row < VGA_BUFFER_HEIGHT - 1 {
+			self.current_row += 1;
 		} else {
 			let blank = VGAChar {
 				ascii_char: b' ',
-				colour_pair: self.current_colour_pair,
+				colour_pair: colour_pair,
 			};
 			for row in 0..VGA_BUFFER_HEIGHT - 1 {
 				for col in 0..VGA_BUFFER_WIDTH {
-					self.buffer.chars[row][col] = self.buffer.chars[row + 1][col];
+					self.buffer.write(row, col, self.buffer.read(row + 1, col));
 				}
 			}
 			for col in 0..VGA_BUFFER_WIDTH {
-				self.buffer.chars[VGA_BUFFER_HEIGHT - 1][col] = blank;
+				self.buffer.write(VGA_BUFFER_HEIGHT - 1, col, blank);
 			}
 		}
-		self.pos_in_col = 0;
-	}
-}
-
-impl fmt::Write for Writer {
-	fn write_str(&mut self, s: &str) -> fmt::Result {
-		for byte in s.bytes() {
-			match byte {
-				0x20..=0x7e | b'\n' => self.write_byte(byte),
-				_ => self.write_byte(0xfe),
-			}
-
-		}
-		Ok(())
+		self.pos_in_row = 0;
 	}
 }
