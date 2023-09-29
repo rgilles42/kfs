@@ -1,7 +1,6 @@
 use core::fmt;
 use core::fmt::Write;
-
-use crate::GLOBAL_VGA;
+use core::mem::transmute;
 
 #[macro_export]
 macro_rules! println {
@@ -26,7 +25,7 @@ pub fn _print(args: fmt::Arguments) {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
-pub enum Colour {
+enum Colour {
 	Black = 0,
 	Blue = 1,
 	Green = 2,
@@ -47,10 +46,10 @@ pub enum Colour {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct ColourPair(u8);
+struct ColourPair(u8);
 
 impl ColourPair {
-	pub fn new(fg: Colour, bg: Colour) -> Self {
+	fn new(fg: Colour, bg: Colour) -> Self {
 		ColourPair((bg as u8) << 4 | (fg as u8))
 	}
 }
@@ -88,54 +87,81 @@ impl VGABuffer {
 	}
 }
 
+static mut GLOBAL_VGA: Option<VGA> = None;
 const VGA_BUFFER_ADDR : u32 = 0xb8000;
+
+pub fn setup_io() {
+	unsafe {
+		if GLOBAL_VGA.is_none() {
+			GLOBAL_VGA = Some(VGA::new());
+		}
+	}
+}
+
 
 pub struct VGA {
 	buffer: &'static mut VGABuffer,
 	current_row: usize,
 	pos_in_row: usize,
+	colour_pair: ColourPair
 }
 
 impl VGA {
-	pub fn new() -> Self {
+	fn new() -> Self {
 		VGA {
 			buffer: unsafe {&mut *(VGA_BUFFER_ADDR as *mut VGABuffer)},
 			current_row: 0,
-			pos_in_row: 0
+			pos_in_row: 0,
+			colour_pair: ColourPair::new(Colour::White, Colour::Black)
 		}
 	}
-	pub fn printstr(&mut self, s: &str, colour_pair: ColourPair) {
+	fn printstr(&mut self, s: &str) {
+		let mut is_ansiing: Option<[u8; 2]> = None;
 		for byte in s.bytes() {
 			match byte {
-				0x20..=0x7e | b'\n' => self.write_byte(byte, colour_pair),
-				_ => self.write_byte(0xfe, colour_pair),
+				0x1B => is_ansiing = Some([255, 255]),
+				0x00..=0x0F if is_ansiing.is_some() => {
+					let dest: usize = if is_ansiing.as_ref().unwrap()[0] == 255 {0} else {1};
+					is_ansiing.as_mut().unwrap()[dest] = byte;
+					if dest == 1 {
+						self.colour_pair = unsafe {ColourPair::new(transmute(is_ansiing.unwrap()[0] % 16), transmute(is_ansiing.unwrap()[1] % 16))};
+						is_ansiing = None;
+					}
+				}
+				0x20..=0xfe | b'\n' => {
+					if is_ansiing.is_some() {
+						is_ansiing = None;
+					}
+					self.write_byte(byte)
+				},
+				_ => self.write_byte(0xfe),
 			}
 		}
 	}
-	fn write_byte(&mut self, byte: u8, colour_pair: ColourPair) {
+	fn write_byte(&mut self, byte: u8) {
 		match byte {
-			b'\n' => self.new_line(colour_pair),
+			b'\n' => self.new_line(),
 			byte => {
 				if self.pos_in_row >= VGA_BUFFER_WIDTH {
-					self.new_line(colour_pair);
+					self.new_line();
 				}
 				self.buffer.write(self.current_row, self.pos_in_row,
 					VGAChar {
 						ascii_char: byte,
-						colour_pair: colour_pair,
+						colour_pair: self.colour_pair,
 					}
 				);
 				self.pos_in_row += 1;
 			}
 		}
 	}
-	fn new_line(&mut self, colour_pair: ColourPair) {
+	fn new_line(&mut self) {
 		if self.current_row < VGA_BUFFER_HEIGHT - 1 {
 			self.current_row += 1;
 		} else {
 			let blank = VGAChar {
 				ascii_char: b' ',
-				colour_pair: colour_pair,
+				colour_pair: ColourPair::new(Colour::White, Colour::Black),
 			};
 			for row in 0..VGA_BUFFER_HEIGHT - 1 {
 				for col in 0..VGA_BUFFER_WIDTH {
@@ -152,15 +178,7 @@ impl VGA {
 
 impl fmt::Write for VGA {
 	fn write_str(&mut self, s: &str) -> fmt::Result {
-		self.printstr(s, ColourPair::new(Colour::White, Colour::Black));
+		self.printstr(s);
 		Ok(())
-	}
-}
-
-pub fn setup_io() {
-	unsafe {
-		if GLOBAL_VGA.is_none() {
-			GLOBAL_VGA = Some(VGA::new());
-		}
 	}
 }

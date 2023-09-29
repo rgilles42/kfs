@@ -4,10 +4,6 @@
 mod vga;
 
 use core::panic::PanicInfo;
-use crate::vga::VGA;
-use crate::vga::ColourPair;
-
-static mut GLOBAL_VGA: Option<VGA> = None;
 
 #[panic_handler]
 fn panic(_panic: &PanicInfo) -> ! {
@@ -39,17 +35,8 @@ pub extern "C" fn kmain() -> ! {
 	println!("19 km a pied, ca use, ca use, 19 km a pied, ca use les souliers");
 	println!("20 km a pied, ca use, ca use, 20 km a pied, ca use les souliers");
 	println!("21 km a pied, ca use, ca use, 21 km a pied, ca use les souliers");
-	println!("22 km a pied, ca use, ca use, 22 km a pied, ca use les souliers");
-	println!("23 km a pied, ca use, ca use, 23 km a pied, ca use les souliers");
-	println!("24 km a pied, ca use, ca use, 24 km a pied, ca use les souliers");
-	println!("25 km a pied, ca use, ca use, 25 km a pied, ca use les souliers");
-	println!("26 km a pied, ca use, ca use, 26 km a pied, ca use les souliers");
-	println!("27 km a pied, ca use, ca use, 27 km a pied, ca use les souliers");
-	println!("28 km a pied, ca use, ca use, 28 km a pied, ca use les souliers");
-	println!("29 km a pied, ca use, ca use, 29 km a pied, ca use les souliers");
-	println!("30 km a pied, ca use, ca use, 30 km a pied, ca use les souliers");
-	println!("bite");
-	unsafe{GLOBAL_VGA.as_mut()}.unwrap().printstr("bite mais en jaune", ColourPair::new(vga::Colour::Yellow, vga::Colour::Black));
+	println!("Voir \x1b\x06\x00la \x1b\x01\x00vie \x1b\x04\x00en \x1b\x0d\x00couleur, \x1b\x0c\x00c'est \x1b\x00\x0fle \x1b\x04\x0esecret \x1b\x07\x03du \x1b\x03\x07bonheur");
+	print!("\x1b\x0e\x0042...");
 	loop {}
 }
 
