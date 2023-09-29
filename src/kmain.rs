@@ -1,87 +1,42 @@
 #![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
-use core::arch::asm;
-use core::ffi::c_void;
+mod vga;
 
-static VGA_PTR : u32 = 0xb8000;
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(_panic: &PanicInfo) -> ! {
-    loop {}
+	println!("{}", _panic);
+	loop {}
 }
 
 #[no_mangle]
-fn strlen(s : *const u8) -> usize {
-    let mut len = 0;
-    let mut ptr = s;
-    unsafe {
-        while *ptr != 0 {
-            len += 1;
-            ptr = ptr.offset(1);
-        }
-    }
-    len
-}
-
-#[no_mangle]
-fn memcpy(dst: *const c_void, src: *const c_void, n : usize) -> *mut u8 {
-    let dst = dst as *mut u8;
-    let src = src as *mut u8; 
-    for i in 0..n {
-        unsafe {
-            *dst.offset(i as isize) = *src.offset(i as isize);
-        }
-    }
-    dst
-}
-
-#[no_mangle]
-fn memset(dst: *const c_void, val:  u8, n : usize) -> *mut u8 {
-    let dst = dst as *mut u8;
-    for i in 0..n {
-        unsafe {
-            *dst.offset(i as isize) = val;
-        }
-    }
-    dst
-}
-
-#[no_mangle]
-fn memcmp(s1: *const c_void, s2: *const c_void, n : isize) -> i32 {
-    let s1 = s1 as *mut i8;
-    let s2 = s2 as *mut i8;
-    for i in 0..n {
-        unsafe {
-            let v1 : i32 = s1.offset(i as isize) as i32;
-            let v2 : i32 = s2.offset(i as isize) as i32;
-            if v1 != v2 {
-                return v1 - v2;
-            }
-        }
-    }
-    0
-}
-
-fn print(s : &str)
-{
-    let vga_buffer = VGA_PTR as *mut u8;
-    for (i, c) in s.chars().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = c as u8;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
-        }
-    }
-}
-
-#[no_mangle]
-#[allow(unused_results)] // TODO remove and handle correctly
 pub extern "C" fn kmain() -> ! {
-    unsafe {
-        asm!("cli");
-    }
-    print("Hello, world!");
-    loop {}
+	vga::setup_io();
+	println!("1 km a pied, ca use, ca use, 1 km a pied, ca use les souliers");
+	println!("2 km a pied, ca use, ca use, 2 km a pied, ca use les souliers");
+	println!("3 km a pied, ca use, ca use, 3 km a pied, ca use les souliers");
+	println!("4 km a pied, ca use, ca use, 4 km a pied, ca use les souliers");
+	println!("5 km a pied, ca use, ca use, 5 km a pied, ca use les souliers");
+	println!("6 km a pied, ca use, ca use, 6 km a pied, ca use les souliers");
+	println!("7 km a pied, ca use, ca use, 7 km a pied, ca use les souliers");
+	println!("8 km a pied, ca use, ca use, 8 km a pied, ca use les souliers");
+	println!("9 km a pied, ca use, ca use, 9 km a pied, ca use les souliers");
+	println!("10 km a pied, ca use, ca use, 10 km a pied, ca use les souliers");
+	println!("11 km a pied, ca use, ca use, 11 km a pied, ca use les souliers");
+	println!("12 km a pied, ca use, ca use, 12 km a pied, ca use les souliers");
+	println!("13 km a pied, ca use, ca use, 13 km a pied, ca use les souliers");
+	println!("14 km a pied, ca use, ca use, 14 km a pied, ca use les souliers");
+	println!("15 km a pied, ca use, ca use, 15 km a pied, ca use les souliers");
+	println!("16 km a pied, ca use, ca use, 16 km a pied, ca use les souliers");
+	println!("17 km a pied, ca use, ca use, 17 km a pied, ca use les souliers");
+	println!("18 km a pied, ca use, ca use, 18 km a pied, ca use les souliers");
+	println!("19 km a pied, ca use, ca use, 19 km a pied, ca use les souliers");
+	println!("20 km a pied, ca use, ca use, 20 km a pied, ca use les souliers");
+	println!("21 km a pied, ca use, ca use, 21 km a pied, ca use les souliers");
+	println!("Voir \x1b\x06\x00la \x1b\x01\x00vie \x1b\x04\x00en \x1b\x0d\x00couleur, \x1b\x0c\x00c'est \x1b\x00\x0fle \x1b\x04\x0esecret \x1b\x07\x03du \x1b\x03\x07bonheur");
+	print!("\x1b\x0e\x0042...");
+	loop {}
 }
 
