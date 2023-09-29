@@ -1,6 +1,8 @@
 use core::fmt;
 use core::fmt::Write;
 
+use crate::GLOBAL_VGA;
+
 #[macro_export]
 macro_rules! println {
 	() => ($crate::print!("\n"));
@@ -14,19 +16,11 @@ macro_rules! print {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-	let mut vga = VGA {
-		buffer: unsafe { &mut *(VGA_BUFFER_ADDR as *mut VGABuffer) },
-		current_row: 0,
-		pos_in_row: 0
+	unsafe {
+		if let Some(vga) = &mut GLOBAL_VGA {
+			vga.write_fmt(args).unwrap();
+		}
 	};
-	vga.write_fmt(args).unwrap();
-}
-
-impl fmt::Write for VGA {
-	fn write_str(&mut self, s: &str) -> fmt::Result {
-		self.printstr(s, ColourPair::new(Colour::White, Colour::Black));
-		Ok(())
-	}
 }
 
 #[allow(dead_code)]
@@ -53,7 +47,7 @@ pub enum Colour {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
-struct ColourPair(u8);
+pub struct ColourPair(u8);
 
 impl ColourPair {
 	pub fn new(fg: Colour, bg: Colour) -> Self {
@@ -96,13 +90,20 @@ impl VGABuffer {
 
 const VGA_BUFFER_ADDR : u32 = 0xb8000;
 
-struct VGA {
+pub struct VGA {
 	buffer: &'static mut VGABuffer,
 	current_row: usize,
 	pos_in_row: usize,
 }
 
 impl VGA {
+	pub fn new() -> Self {
+		VGA {
+			buffer: unsafe {&mut *(VGA_BUFFER_ADDR as *mut VGABuffer)},
+			current_row: 0,
+			pos_in_row: 0
+		}
+	}
 	pub fn printstr(&mut self, s: &str, colour_pair: ColourPair) {
 		for byte in s.bytes() {
 			match byte {
@@ -146,5 +147,20 @@ impl VGA {
 			}
 		}
 		self.pos_in_row = 0;
+	}
+}
+
+impl fmt::Write for VGA {
+	fn write_str(&mut self, s: &str) -> fmt::Result {
+		self.printstr(s, ColourPair::new(Colour::White, Colour::Black));
+		Ok(())
+	}
+}
+
+pub fn setup_io() {
+	unsafe {
+		if GLOBAL_VGA.is_none() {
+			GLOBAL_VGA = Some(VGA::new());
+		}
 	}
 }
