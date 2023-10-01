@@ -9,33 +9,34 @@ ASFLAGS=-m32 -masm=intel -g
 LD=ld
 LDFLAGS=-n -nostdlib -m elf_i386
 
-KLIB=libkfs.a # TODO debug ? release ?
+KLIB =		target/x86/debug/libkfs.a # TODO debug ? release ?
+BOOT_ASM =	target/x86/boot.o
+
+ISO =		kfs.iso
 
 
 all: $(NAME)
 
-$(NAME): $(KLIB) asm link
+$(NAME): $(KLIB) $(BOOT_ASM)
+	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) $(BOOT_ASM) $(KLIB) # TODO debug ?
 
 $(KLIB):
 	$(CARGO) build  # TODO debug ?
 
-asm:
-	$(AS) $(ASFLAGS) -c src/arch/x86/boot.s  -o target/boot.o
+$(BOOT_ASM):
+	$(AS) $(ASFLAGS) -c src/arch/x86/boot.s  -o $(BOOT_ASM)
 
-link:
-	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) target/boot.o target/x86/debug/$(KLIB) # TODO debug ?
-
-mkiso: $(NAME)
+$(ISO): $(NAME)
 	cp $(NAME) isodir/boot/kfs.bin
-	grub-mkrescue -d ./i386-pc -o kfs.iso isodir
+	grub-mkrescue -d ./i386-pc -o $(ISO) isodir
 
 clean:
 	$(CARGO) clean
-	rm -f target/boot.o
+	rm -f $(BOOT_ASM)
 	rm -f $(NAME)
-	rm -f kfs.iso
+	rm -f $(ISO)
 
-run: mkiso
+run: $(ISO)
 	$(QEMU) -cdrom kfs.iso -no-reboot
 
 run_kernel: $(NAME)
@@ -44,4 +45,4 @@ run_kernel: $(NAME)
 run_debug: $(NAME)
 	$(QEMU) -kernel $(NAME) -s -S -no-reboot -d int,cpu_reset
 
-
+.PHONY: clean run run_kernel run_debug
