@@ -27,7 +27,7 @@ link:
 
 mkiso: $(NAME)
 	cp $(NAME) isodir/boot/kfs.bin
-	grub-mkrescue -o kfs.iso isodir
+	grub-mkrescue -d ./i386-pc -o kfs.iso isodir
 
 clean:
 	$(CARGO) clean
