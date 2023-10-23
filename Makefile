@@ -17,16 +17,16 @@ ISO =		kfs.iso
 
 all: $(NAME)
 
-$(NAME): $(KLIB) $(BOOT_ASM)
+$(NAME): klib_build $(BOOT_ASM)
 	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) $(BOOT_ASM) $(KLIB) # TODO debug ?
 
-$(KLIB):
+klib_build:
 	$(CARGO) build  # TODO debug ?
 
-$(BOOT_ASM):
+$(BOOT_ASM): # TODO doesn't relink if the assembly file has changed
 	$(AS) $(ASFLAGS) -c src/arch/x86/boot.s  -o $(BOOT_ASM)
 
-$(ISO): $(NAME)
+iso: $(NAME)
 	cp $(NAME) isodir/boot/kfs.bin
 	grub-mkrescue -d ./i386-pc -o $(ISO) isodir
 
@@ -36,7 +36,7 @@ clean:
 	rm -f $(NAME)
 	rm -f $(ISO)
 
-run: $(ISO)
+run: iso
 	$(QEMU) -cdrom kfs.iso -no-reboot
 
 run_kernel: $(NAME)

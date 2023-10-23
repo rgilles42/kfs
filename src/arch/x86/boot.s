@@ -27,8 +27,8 @@ stack_ptr:
 
 start:
   movl $stack_ptr, %esp
-  push %eax
   push %ebx
+  push %eax
   call kmain
   cli
 1:hlt
