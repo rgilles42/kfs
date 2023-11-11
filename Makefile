@@ -11,20 +11,24 @@ LDFLAGS=-n -nostdlib -m elf_i386
 
 KLIB =		target/x86/debug/libkfs.a # TODO debug ? release ?
 BOOT_ASM =	target/x86/boot.o
+GDT_ASM =	target/x86/gdt.o
+
 
 ISO =		kfs.iso
 
 
 all: $(NAME)
 
-$(NAME): klib_build $(BOOT_ASM)
-	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) $(BOOT_ASM) $(KLIB) # TODO debug ?
+$(NAME): klib_build $(BOOT_ASM) $(GDT_ASM)
+	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) $(BOOT_ASM) $(GDT_ASM) $(KLIB) # TODO debug ?
 
 klib_build:
 	$(CARGO) build  # TODO debug ?
 
 $(BOOT_ASM): # TODO doesn't relink if the assembly file has changed
 	$(AS) $(ASFLAGS) -c src/arch/x86/boot.s  -o $(BOOT_ASM)
+$(GDT_ASM):
+	$(AS) $(ASFLAGS) -c src/arch/x86/gdt.s  -o $(GDT_ASM)
 
 iso: $(NAME)
 	cp $(NAME) isodir/boot/kfs.bin
