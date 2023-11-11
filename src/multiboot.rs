@@ -283,6 +283,7 @@ pub fn parse_mboot_info(ptr: *const u32)
 {
     let info : &MultibootInfo = unsafe {&*(ptr as *const MultibootInfo)};
 
+    println!("Multiboot info : flags({:b})", info.flags);
     // memory info
     if info.flags & MULTIBOOT_INFO_MEMORY != 0 {
         println!("Memory lower: {} KB", info.mem_lower);
@@ -304,4 +305,17 @@ pub fn parse_mboot_info(ptr: *const u32)
         }
         println!("Address of frame buffer : {:p}", info.framebuffer_addr as *const u32);
     }
+
+    // elf or aout
+    if info.flags & MULTIBOOT_INFO_AOUT_SYMS != 0 && info.flags & MULTIBOOT_INFO_ELF_SHDR != 0 {
+      panic!("This is not possible ! Those two flags are mutually exclusive");
+    }
+
+    if info.flags & MULTIBOOT_INFO_AOUT_SYMS != 0 {
+      println!("This is an AOUT format");
+    }
+    if info.flags & MULTIBOOT_INFO_ELF_SHDR != 0 {
+      println!("This is an ELF format");
+    }
+    println!("4bit {} 5bit {}", (info.flags & MULTIBOOT_INFO_AOUT_SYMS), (info.flags & MULTIBOOT_INFO_ELF_SHDR));
 }
