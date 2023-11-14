@@ -4,8 +4,8 @@
 .global reload_segments
 
 gdtr:
-  .word 0          # For limit storage
-  .long 0          # For base storage
+  .word 0          # Size of GDT - 1
+  .long 0          # Offset of GDT
 
 load_gdt:
   mov 4(%esp), %ax
