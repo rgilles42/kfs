@@ -9,26 +9,22 @@ ASFLAGS=-m32 -masm=intel -g
 LD=ld
 LDFLAGS=-n -nostdlib -m elf_i386
 
+ASM_OBJS =	target/x86/boot.o target/x86/gdt.o
 KLIB =		target/x86/debug/libkfs.a # TODO debug ? release ?
-BOOT_ASM =	target/x86/boot.o
-GDT_ASM =	target/x86/gdt.o
-
 
 ISO =		kfs.iso
 
 
+target/%.o : src/arch/%.s
+	$(AS) $(ASFLAGS) -c $< -o $@
+
 all: $(NAME)
 
-$(NAME): klib_build $(BOOT_ASM) $(GDT_ASM)
-	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) $(BOOT_ASM) $(GDT_ASM) $(KLIB) # TODO debug ?
+$(NAME): $(KLIB) $(ASM_OBJS) # TODO debug ? # TODO figure out no relink
+	$(LD) $(LDFLAGS) -T src/arch/x86/x86.ld -o $(NAME) $(ASM_OBJS) $(KLIB) 
 
-klib_build:
-	$(CARGO) build  # TODO debug ?
-
-$(BOOT_ASM): # TODO doesn't relink if the assembly file has changed
-	$(AS) $(ASFLAGS) -c src/arch/x86/boot.s  -o $(BOOT_ASM)
-$(GDT_ASM):
-	$(AS) $(ASFLAGS) -c src/arch/x86/gdt.s  -o $(GDT_ASM)
+$(KLIB): # TODO debug ?
+	$(CARGO) build  
 
 iso: $(NAME)
 	cp $(NAME) isodir/boot/kfs.bin
@@ -36,7 +32,7 @@ iso: $(NAME)
 
 clean:
 	$(CARGO) clean
-	rm -f $(BOOT_ASM)
+	rm -f $(ASM_OBJS)
 	rm -f $(NAME)
 	rm -f $(ISO)
 
@@ -49,4 +45,4 @@ run_kernel: $(NAME)
 run_debug: $(NAME)
 	$(QEMU) -kernel $(NAME) -s -S -no-reboot -d int,cpu_reset
 
-.PHONY: clean run run_kernel run_debug
+.PHONY: clean run run_kernel run_debug $(KLIB)
