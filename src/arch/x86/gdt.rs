@@ -37,12 +37,12 @@ struct GdtEntry {
 
 #[repr(C,packed)]
 struct Gdtr {
-	size: u16,									// size in bytes - 1
+	size: u16,								// size in bytes - 1
 	gdt: &'static mut [GdtEntry; NENTRIES]	// offset of GDT in current address space
 }
 
 impl Gdtr {
-	fn new() -> Self {	//TODO? Clear table before use
+	fn new() -> Self {						//TODO? Clear table before use
 		Gdtr {
 			size: 8 * NENTRIES as u16 - 1,
 			gdt: unsafe {&mut *(GDT_LOCATION as *mut [GdtEntry; NENTRIES])}
@@ -94,8 +94,7 @@ const GDT_ENTRIES : [Entry; 5] = [
 const NENTRIES : usize = GDT_ENTRIES.len();
 
 extern "C" {
-	// fn load_gdt(gdtr: *const Gdtr);
-	fn load_gdt(size: u16, offset: *const GdtEntry);
+	fn load_gdt(gdtr: *const Gdtr);
 	fn reload_segments();
 }
 
@@ -111,8 +110,7 @@ pub fn load()
 	println!("GDT size : {}", { gdt.size });
 	println!("GDT pointer : 0x{:08x}", gdt.gdt.as_ptr() as *const _ as u32);
 	unsafe {
-		// load_gdt(gdt.as_ptr() as *const _);
-		load_gdt(gdt.size, gdt.gdt.as_ptr() as *const _);
+		load_gdt(&gdt as *const _);
 		reload_segments()
 	}
 }

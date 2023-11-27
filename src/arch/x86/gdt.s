@@ -3,16 +3,9 @@
 .global load_gdt
 .global reload_segments
 
-gdtr:
-  .word 0          # Size of GDT - 1
-  .long 0          # Offset of GDT
-
 load_gdt:
-  mov 4(%esp), %ax
-  movw %ax, gdtr
-  movl 8(%esp), %eax
-  movl %eax, gdtr + 2
-  lgdt gdtr
+  mov 4(%esp), %eax
+  lgdtl (%eax)
   ret
 
 reload_segments:
