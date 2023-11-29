@@ -3,7 +3,7 @@ use core::fmt::Write;
 use core::mem::transmute;
 
 #[macro_export]
-macro_rules! println {
+macro_rules! printk {
 	() => ($crate::print!("\n"));
 	($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }

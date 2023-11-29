@@ -1,6 +1,6 @@
 use core::usize;
 
-use crate::println;
+use crate::printk;
 
 #[allow(dead_code)]
 mod segment_access // aligned for 4kb
@@ -116,9 +116,9 @@ pub fn load()
 		gdt.add_entry(index, entry);
 	}
 	
-	println!("GDTR location : 0x{:08x}", &gdt as *const _ as u32);
-	println!("GDT location : 0x{:08x}", gdt.gdt.as_ptr() as *const _ as u32);
-	println!("GDT size : {}", { gdt.size });
+	printk!("GDTR location : 0x{:08x}", &gdt as *const _ as u32);
+	printk!("GDT location : 0x{:08x}", gdt.gdt.as_ptr() as *const _ as u32);
+	printk!("GDT size : {}", { gdt.size });
 	unsafe {
 		load_gdt(&gdt as *const _);
 		reload_segments()

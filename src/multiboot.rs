@@ -1,7 +1,7 @@
 // multiboot handling file for x86 and x86_64
 /* How many bytes from the start of the file we search for the header. */
 
-use crate::println;
+use crate::printk;
 
 #[allow(dead_code)]
 pub mod flags {
@@ -283,27 +283,27 @@ pub fn parse_mboot_info(ptr: *const u32)
 {
     let info : &MultibootInfo = unsafe {&*(ptr as *const MultibootInfo)};
 
-    println!("Multiboot info : flags({:b})", info.flags);
+    printk!("Multiboot info : flags({:b})", info.flags);
     // memory info
     if info.flags & MULTIBOOT_INFO_MEMORY != 0 {
-        println!("Memory lower: {} KB", info.mem_lower);
-        println!("Memory upper: {} KB", info.mem_upper);
+        printk!("Memory lower: {} KB", info.mem_lower);
+        printk!("Memory upper: {} KB", info.mem_upper);
     }
     // memory map
     if info.flags & MULTIBOOT_INFO_MEM_MAP != 0 {
         let nentries = info.mmap_length / core::mem::size_of::<MultibootMmapEntry>() as u32;
-        println!("Memory map has {} entries", nentries);
+        printk!("Memory map has {} entries", nentries);
         let mut ptr = info.mmap_addr as *const MultibootMmapEntry;
         for _i in 0..nentries
         {
           unsafe {
             let entry = ptr.read_unaligned();
-            println!("Mmap entry : size({}) addr({:p}) len({}) type({})",
+            printk!("Mmap entry : size({}) addr({:p}) len({}) type({})",
                   {entry.size}, {entry.addr as *const u32}, {entry.len}, {entry.type_});
             ptr = ptr.offset(1);
           }
         }
-        println!("Address of frame buffer : {:p}", info.framebuffer_addr as *const u32);
+        printk!("Address of frame buffer : {:p}", info.framebuffer_addr as *const u32);
     }
 
     // elf or aout
@@ -312,10 +312,10 @@ pub fn parse_mboot_info(ptr: *const u32)
     }
 
     if info.flags & MULTIBOOT_INFO_AOUT_SYMS != 0 {
-      println!("This is an AOUT format");
+      printk!("This is an AOUT format");
     }
     if info.flags & MULTIBOOT_INFO_ELF_SHDR != 0 {
-      println!("This is an ELF format");
+      printk!("This is an ELF format");
     }
-    println!("4bit {} 5bit {}", (info.flags & MULTIBOOT_INFO_AOUT_SYMS), (info.flags & MULTIBOOT_INFO_ELF_SHDR));
+    printk!("4bit {} 5bit {}", (info.flags & MULTIBOOT_INFO_AOUT_SYMS), (info.flags & MULTIBOOT_INFO_ELF_SHDR));
 }
