@@ -67,7 +67,7 @@ struct Entry {
 }
 
 const GDT_LOCATION : u32 = 0x00000800;
-const GDT_ENTRIES : [Entry; 5] = [
+const GDT_ENTRIES : [Entry; 7] = [
 	// Null Descriptor
 	Entry { base: 0, limit: 0, access_byte: 0, flags: 0  },
 	// Kernel Code
@@ -80,12 +80,22 @@ const GDT_ENTRIES : [Entry; 5] = [
 		access_byte: segment_access::P | segment_access::S | segment_access::RW,
 		flags: segment_flags::DB | segment_flags::G
 	},
+	// Kernel Stack TODO change perms
+	Entry { base: 0x00000000, limit: 0xffffffff,
+		access_byte: segment_access::P | segment_access::S | segment_access::RW,
+		flags: segment_flags::DB | segment_flags::G
+	},
 	// User Code TODO change perms
 	Entry { base: 0x00000000, limit: 0xffffffff,
 		access_byte: segment_access::P | segment_access::S | segment_access::E | segment_access::RW,
 		flags: segment_flags::DB | segment_flags::G
 	},
 	// User Data TODO change perms
+	Entry { base: 0x00000000, limit: 0xffffffff,
+		access_byte: segment_access::P | segment_access::S | segment_access::RW,
+		flags: segment_flags::DB | segment_flags::G
+	},
+	// User Stack TODO change perms
 	Entry { base: 0x00000000, limit: 0xffffffff,
 		access_byte: segment_access::P | segment_access::S | segment_access::RW,
 		flags: segment_flags::DB | segment_flags::G
@@ -106,9 +116,9 @@ pub fn load()
 		gdt.add_entry(index, entry);
 	}
 	
-	println!("GDTR pointer : 0x{:08x}", &gdt as *const _ as u32);
+	println!("GDTR location : 0x{:08x}", &gdt as *const _ as u32);
+	println!("GDT location : 0x{:08x}", gdt.gdt.as_ptr() as *const _ as u32);
 	println!("GDT size : {}", { gdt.size });
-	println!("GDT pointer : 0x{:08x}", gdt.gdt.as_ptr() as *const _ as u32);
 	unsafe {
 		load_gdt(&gdt as *const _);
 		reload_segments()
