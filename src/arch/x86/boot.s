@@ -1,5 +1,7 @@
 .globl kmain
 .globl start
+.globl get_sp
+.globl get_bp
 
 .set MODULEALIGN, (1<<0)
 .set MEMINFO, (1<<1)
@@ -24,15 +26,27 @@ stack_ptr:
 .section .text
 .global start
 .type start,@function
-
+.global get_sp
+.type get_sp,@function
+.global get_bp
+.type get_bp,@function
 start:
   movl $stack_ptr, %esp
+  movl $stack_ptr, %ebp
   push %ebx
   push %eax
   call kmain
   cli
 1:hlt
   jmp 1b
+
+get_sp:
+  movl %esp, %eax
+  ret
+
+get_bp:
+  movl %ebp, %eax
+  ret
 
 .size start, . - start
 
