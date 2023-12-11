@@ -13,9 +13,10 @@ reload_segments:
 
 reload_CS:
   movw $0x10, %ax
+  movw $0x18, %bx
   movw %ax, %ds
   movw %ax, %es
   movw %ax, %fs
   movw %ax, %gs
-  movw %ax, %ss
+  movw %bx, %ss
   ret

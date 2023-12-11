@@ -281,6 +281,8 @@ struct MultibootApmInfo
 
 pub fn parse_mboot_info(ptr: *const u32)
 {
+    printk!("/*******************/\n/* Multiboot Infos */\n/*******************/");
+
     let info : &MultibootInfo = unsafe {&*(ptr as *const MultibootInfo)};
 
     printk!("Multiboot info : flags({:b})", info.flags);

@@ -94,6 +94,7 @@ pub fn setup_io() {
 	unsafe {
 		if GLOBAL_VGA.is_none() {
 			GLOBAL_VGA = Some(VGA::new());
+			//printk!("/*********************/\n/* VGA Output Loaded */\n/*********************/");
 		}
 	}
 }
