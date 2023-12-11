@@ -1,12 +1,10 @@
 .section .text
 
-.global load_gdt
-.global reload_segments
+.global reload_gdt
 
-load_gdt:
+reload_gdt:
   mov 4(%esp), %eax
   lgdtl (%eax)
-  ret
 
 reload_segments:
   ljmp $0x8, $reload_CS
