@@ -41,7 +41,7 @@ fn print_stack(mut sp: usize, bp: usize) {
 fn demo_stackframe() {
 	printk!("/***************/\n/* Stack frame */\n/***************/");
 	printk!("Current values of sp: 0x{:08x} and bp: 0x{:08x}, size is of 0x{:08x}", sp!(), bp!(), bp!() - sp!());
-	//print_stack(sp!(), bp!());
+	print_stack(sp!(), bp!());
 }
 
 #[no_mangle]
@@ -55,4 +55,3 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
 	demo_stackframe();
 	loop {}
 }
-
