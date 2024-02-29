@@ -2,6 +2,7 @@
 .globl start
 .globl get_sp
 .globl get_bp
+.globl setup_early_paging
 
 .set MODULEALIGN, (1<<0)
 .set MEMINFO, (1<<1)
@@ -10,7 +11,9 @@
 .set CHECKSUM, -(MAGIC + FLAGS)
 .set STACKSIZE, 0x4000
 
-.section .multiboot
+.set HIGH_MAPPING_START, 0xC0000000
+
+.section .multiboot, "ax"
 .align 4
 MultiBootHeader:
   .long MAGIC
@@ -31,8 +34,23 @@ stack_ptr:
 .global get_bp
 .type get_bp,@function
 start:
+  
+
   movl $stack_ptr, %esp
   movl $stack_ptr, %ebp
+  sub $HIGH_MAPPING_START, %esp
+  sub $HIGH_MAPPING_START, %ebp
+
+  //Setting up the early double mapping
+  call setup_early_paging
+  push %eax
+  lea [higher_half], %eax
+  jmp %eax
+  higher_half:
+  add $HIGH_MAPPING_START, %esp
+  add $HIGH_MAPPING_START, %ebp
+  pop %eax
+
   push %ebx
   push %eax
   call kmain

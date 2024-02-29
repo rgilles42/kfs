@@ -9,7 +9,7 @@ ASFLAGS=-m32 -masm=intel -g
 LD=ld
 LDFLAGS=-n -nostdlib -m elf_i386
 
-ASM_OBJS =	target/x86/boot.o target/x86/gdt.o
+ASM_OBJS =	target/x86/boot.o target/x86/gdt.o target/x86/mapping.o
 KLIB =		target/x86/debug/libkfs.a # TODO debug ? release ?
 
 ISO =		kfs.iso
@@ -35,6 +35,8 @@ clean:
 	rm -f $(ASM_OBJS)
 	rm -f $(NAME)
 	rm -f $(ISO)
+
+re: clean all
 
 run: iso
 	$(QEMU) -cdrom kfs.iso -no-reboot
