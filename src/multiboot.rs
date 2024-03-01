@@ -279,45 +279,77 @@ struct MultibootApmInfo
 }
 
 
-pub fn parse_mboot_info(ptr: *const u32)
+use crate::memory;
+
+// will store necessary information for the pmm in a structure 
+// TODO manage more main memory blocks ?
+fn parse_memory_map(info : &MultibootInfo)
 {
-    printk!("/*******************/\n/* Multiboot Infos */\n/*******************/");
+  let nentries = info.mmap_length as usize / core::mem::size_of::<MultibootMmapEntry>();
 
-    let info : &MultibootInfo = unsafe {&*(ptr as *const MultibootInfo)};
+  printk!("Memory map has {} entries", nentries);
+  let mut ptr = info.mmap_addr as *const MultibootMmapEntry;
+  
+  // Used to check if memory is contiguous
+  // TODO handle non contiguous memory
+  let mut next_start: usize = 0;
+  for i in 0..nentries
+  {
+      unsafe {
+        let entry = ptr.read_unaligned();
+      // if the memory is usable
+        // assert!(next_start == entry.addr as usize, "The physical memory is not contiguous !");
+        // next_start += entry.len as usize;
+        printk!("Adding a region " );
+        memory::phys_mem().add_entry(
+          memory::PhysicalRegion::new(entry.addr as usize, entry.len as usize, entry.type_ as usize));
+        ptr = ptr.offset(1);
+      }
+  }
+}
 
-    printk!("Multiboot info : flags({:b})", info.flags);
-    // memory info
+pub enum MbootError
+{
+    NoMemoryMap,
+    InvalidFlags
+}
+use MbootError::*;
+
+pub fn parse_mboot_info(ptr: *const u32) -> Result<(), MbootError>
+{
+  let info : &MultibootInfo;
+  unsafe {
+     info = &*(ptr as *const MultibootInfo);
+    printk!("Mboot flags euuuh: {:b}", info.flags);
+    printk!("Boot modules : {}", info.mods_count);
+
+    // memory map
     if info.flags & MULTIBOOT_INFO_MEMORY != 0 {
         printk!("Memory lower: {} KB", info.mem_lower);
         printk!("Memory upper: {} KB", info.mem_upper);
     }
-    // memory map
-    if info.flags & MULTIBOOT_INFO_MEM_MAP != 0 {
-        let nentries = info.mmap_length / core::mem::size_of::<MultibootMmapEntry>() as u32;
-        printk!("Memory map has {} entries", nentries);
-        let mut ptr = info.mmap_addr as *const MultibootMmapEntry;
-        for _i in 0..nentries
-        {
-          unsafe {
-            let entry = ptr.read_unaligned();
-            printk!("Mmap entry : size({}) addr({:p}) len({}) type({})",
-                  {entry.size}, {entry.addr as *const u32}, {entry.len}, {entry.type_});
-            ptr = ptr.offset(1);
-          }
-        }
-        printk!("Address of frame buffer : {:p}", info.framebuffer_addr as *const u32);
-    }
 
     // elf or aout
     if info.flags & MULTIBOOT_INFO_AOUT_SYMS != 0 && info.flags & MULTIBOOT_INFO_ELF_SHDR != 0 {
-      panic!("This is not possible ! Those two flags are mutually exclusive");
+      return Err(InvalidFlags);
     }
-
     if info.flags & MULTIBOOT_INFO_AOUT_SYMS != 0 {
       printk!("This is an AOUT format");
     }
     if info.flags & MULTIBOOT_INFO_ELF_SHDR != 0 {
       printk!("This is an ELF format");
+      // print elf section header info
+      printk!("Elf section header : num({}) size({}) addr({:p}) shndx({})",
+            {info.u.elf.num}, {info.u.elf.size}, {info.u.elf.addr as *const u32}, {info.u.elf.shndx});
     }
-    printk!("4bit {} 5bit {}", (info.flags & MULTIBOOT_INFO_AOUT_SYMS), (info.flags & MULTIBOOT_INFO_ELF_SHDR));
+
+    if info.flags & MULTIBOOT_INFO_MEM_MAP != 0 {
+      parse_memory_map(info);
+    }
+    else {
+      return Err(NoMemoryMap);
+    }
+
+    Ok(())
+  }
 }

@@ -88,7 +88,7 @@ impl VGABuffer {
 }
 
 static mut GLOBAL_VGA: Option<VGA> = None;
-const VGA_BUFFER_ADDR : u32 = 0xb8000;
+const VGA_BUFFER_ADDR : u32 = 0xC00b8000;
 
 pub fn setup_io() {
 	unsafe {
