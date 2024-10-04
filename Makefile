@@ -39,7 +39,7 @@ clean:
 re: clean all
 
 run: iso
-	$(QEMU) -cdrom kfs.iso -no-reboot
+	$(QEMU) -cdrom kfs.iso -no-reboot -serial stdio
 
 run_kernel: $(NAME)
 	$(QEMU) -kernel $(NAME) -no-reboot

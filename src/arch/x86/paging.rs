@@ -180,13 +180,20 @@ impl mapper::MapperInterface for PageDir
     fn unmap_single(&mut self, address: usize) -> Result<(), ()> {
         let address = self.virt_to_phys(address).expect("Trying to unmap unmapped page");
         pmm::free_page(Frame(address/PAGE_SIZE));
+
+        let pde_index = address >> 22;
+        let pte_offset = ((address >> 12) & 0x3ff) * core::mem::size_of::<PDE>();
+        let special = (0x3ff << 22) | pde_index << 12 | pte_offset;
+        unsafe { 
+            *(special as *mut usize) = 0;
+        }
         flush_tlb();
         Ok(())
     }
 
     fn unmap_range(&mut self, address: usize, npages: usize) -> Result<(), ()> {
         let mut ptr = address;
-        for i in 0..npages {
+        for _i in 0..npages {
             self.unmap_single(ptr);
             ptr += PAGE_SIZE;
         }

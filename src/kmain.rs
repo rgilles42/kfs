@@ -6,6 +6,7 @@ mod multiboot;
 mod arch;
 mod memory;
 mod utils;
+mod serial;
 
 use core::panic::PanicInfo;
 use crate::multiboot::parse_mboot_info;
@@ -115,6 +116,7 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
     // Sets up the virtual memory manager
     let memstart = ROUND_PAGE_UP!(kend);
     vmm::init(memstart, arch::KERNEL_PAGE_TABLES_START - kend);
+
 
 
     let a = alloc::string::String::from("Moi je suis en pleine forme");

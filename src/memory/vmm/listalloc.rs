@@ -8,6 +8,7 @@ use core::mem::size_of;
 use crate::{printk, align_up, align_down, is_aligned, print};
 use super::Lock;
 use core::fmt;
+use crate::dbg;
 
 pub struct ListAllocator
 {
@@ -213,19 +214,19 @@ impl ListAllocator
 
     pub fn print_list(&self)
     {
-        print!("fn print_list : head {:p}|", self as *const ListAllocator);
+        dbg!("fn print_list : head {:p}|", self as *const ListAllocator);
         let mut current = &self.head.next;
         let i = 0;
         loop {
             match current {
                 Some(b) => {
-                    print!("block {} {:?} {:p}| ", i, b.size, *b as *const BlockInfo);
+                    dbg!("block {} {:?} {:p}|", i, b.size, *b as *const BlockInfo);
                     current = &b.next; 
                 }
                 None => break
             }
         }
-        print!("\n");
+        dbg!("");
     }
 }
 
@@ -235,7 +236,7 @@ unsafe impl GlobalAlloc for Lock<ListAllocator>
     unsafe fn alloc(&self, layout: Layout) -> *mut u8
     {
         let alloc = self.get();
-        printk!("*** alloc : {}", layout.size());
+        dbg!("*** alloc : {}", layout.size());
         let (size, align) = ListAllocator::adjust_layout(layout);
         match alloc.alloc_block(size + size_of::<BlockInfo>()) { // TODO better alignment
             // management
@@ -251,7 +252,7 @@ unsafe impl GlobalAlloc for Lock<ListAllocator>
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout)
     {
         let alloc = self.get();
-        printk!("*** dealloc : {}", layout.size());
+        dbg!("*** dealloc : {}", layout.size());
         // TODO check aligntment and use layout
         // TODO Add a mechanism to check if the pointer is valid ?
         let block_address = ptr as usize - binfo_size!();
