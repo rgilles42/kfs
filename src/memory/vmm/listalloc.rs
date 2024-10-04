@@ -83,6 +83,11 @@ impl ListAllocator
         // we will loop throught the nodes to find the neigbhours
         let head_address = self.head.addr();
         let mut current = &mut self.head;
+        // TODO temp fix until I get the courage to clean up all the code from this allocator
+        if current.next.is_none() {
+            current.next = Some(block);
+            return;
+        }
         while !current.next.is_none() {
             let ca = current.addr();
             // TODO confused about the ownership situation here
@@ -97,13 +102,18 @@ impl ListAllocator
                     current = current.next.as_mut().unwrap();
                     // TODO coalesce with next ?
                 }
-                else {
+                else if ca + current.size == block.addr() {
                     current.size += block.size;
                     // coalesce with next block if touching
                     if ca + current.size == next.addr() {
                         current.size += next.size;
                         current.next = next.next.take(); 
                     }
+                }
+                else {
+                    let tmp = current.next.take();
+                    block.next = tmp;
+                    current.next = Some(block);
                 }
                 // If the last free block is at the heap's end, unmap pages if we can
                 if current.next.is_none() && current.addr() + current.size == self.memstart + self.heapsize {
@@ -116,7 +126,7 @@ impl ListAllocator
             }
             current = current.next.as_mut().unwrap(); // TODO don't really understand this line
         }
-        panic!("Invalid free pointer");
+        panic!("Invalid free pointer {:x}", block.addr());
     }
 
     /// Tries to find an existing free block of sufficient enough size
@@ -142,7 +152,7 @@ impl ListAllocator
                 unsafe {
                     let left = BlockInfo {size: b.size - new_size, next: b.next.take()};
                     // TODO this line makes me sad
-                    let left_ptr = (*b as *mut BlockInfo as *mut u8).offset(b.size.try_into().unwrap());
+                    let left_ptr = (*b as *mut BlockInfo as *mut u8).offset(new_size as isize);
                     // TODO might crash on large blocks
                     (left_ptr as *mut BlockInfo).write(left);
                     // Downsizing newly allocated block size
@@ -166,14 +176,13 @@ impl ListAllocator
         // we need to align in case the leftover allocation needs another block
         let total = ROUND_PAGE_UP!(new_size + core::mem::align_of::<BlockInfo>());
         let start = self.memstart + self.heapsize;
-        let range = match pmm::alloc_contiguous_pages(total/PAGE_SIZE) {
-            Some(r) => r,
-            None => { return Err(AllocError::ENOMEM) }
-        };
-        match mapper::map_range_kernel(range, start) {
-            Ok(()) => {self.heapsize += total;}
-            Err(()) => return Err(AllocError::ENOMEM)
+        let range = pmm::alloc_contiguous_pages(total/PAGE_SIZE).ok_or(AllocError::ENOMEM)?;
+        
+        if mapper::map_range_kernel(range, start).is_err() {
+            return Err(AllocError::EMAPPING);
         }
+
+        self.heapsize += total;
 
         let allocated_ptr = start as *const BlockInfo as *mut u8;
         unsafe {
@@ -214,20 +223,23 @@ impl ListAllocator
 
     pub fn print_list(&self)
     {
-        dbg!("fn print_list : head {:p}|", self as *const ListAllocator);
+        dbg!("Block list");
+        dbg!("head {:^10p}", &self.head as *const BlockInfo);
         let mut current = &self.head.next;
-        let i = 0;
+        let mut i = 0;
         loop {
             match current {
                 Some(b) => {
-                    dbg!("block {} {:?} {:p}|", i, b.size, *b as *const BlockInfo);
+                    dbg!("B{:^4} {:^4} {:p}", i, b.size, *b as *const BlockInfo);
                     current = &b.next; 
                 }
                 None => break
             }
+            i += 1;
         }
         dbg!("");
     }
+
 }
 
 

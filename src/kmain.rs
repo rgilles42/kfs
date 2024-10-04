@@ -126,15 +126,16 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
         let b = alloc::string::String::from("Bonjour tout le monde");
         printk!("{}", b);
     }
-	{
-		let _bebou = alloc::boxed::Box::new([1 as u8;400]);
-	}
-	let _bebou = alloc::boxed::Box::new([1 as u8;400]);
+    {
+	    let _bebou = alloc::boxed::Box::new([1 as u8;400]);
+    }
+    let _bebou = alloc::boxed::Box::new([1 as u8;400]);
     printk!("{}", a);
     for i in 0..10 {
-        printk!("{:x}", _vec_test[i]);
+	printk!("{:x}", _vec_test[i]);
     }
-
-
-	loop {}
+    dbg!("==== Coalescing");
+    let _bebou2 = alloc::boxed::Box::new([1 as u8;400]);
+    drop(_bebou2);
+    loop {}
 }

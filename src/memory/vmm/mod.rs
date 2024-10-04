@@ -6,6 +6,7 @@ use listalloc::ListAllocator;
 
 enum AllocError {
     ENOMEM,
+    EMAPPING,
 }
 
 
