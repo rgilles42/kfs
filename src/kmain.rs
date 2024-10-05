@@ -117,25 +117,28 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
     let memstart = ROUND_PAGE_UP!(kend);
     vmm::init(memstart, arch::KERNEL_PAGE_TABLES_START - kend);
 
-
-
-    let a = alloc::string::String::from("Moi je suis en pleine forme");
-    let _vec_test = vec![1;100];
     {
-        let _vec_test2 = vec![1;100];
-        let b = alloc::string::String::from("Bonjour tout le monde");
-        printk!("{}", b);
+        dbg!("========================== MEMORY TESTING"); 
+        let a = alloc::string::String::from("Moi je suis en pleine forme");
+        let _vec_test = vec![1;100];
+        {
+            let _vec_test2 = vec![1;100];
+            let b = alloc::string::String::from("Bonjour tout le monde");
+            printk!("{}", b);
+        }
+        {
+                let _bebou = alloc::boxed::Box::new([1 as u8;400]);
+        }
+        let _bebou = alloc::boxed::Box::new([1 as u8;400]);
+        printk!("{}", a);
+        for i in 0..10 {
+            printk!("{:x}", _vec_test[i]);
+        }
+        let _bebou2 = alloc::boxed::Box::new([1 as u8;400]);
+        {
+            let _vec_test3 = vec![1;100000];
+        }
     }
-    {
-	    let _bebou = alloc::boxed::Box::new([1 as u8;400]);
-    }
-    let _bebou = alloc::boxed::Box::new([1 as u8;400]);
-    printk!("{}", a);
-    for i in 0..10 {
-	printk!("{:x}", _vec_test[i]);
-    }
-    dbg!("==== Coalescing");
-    let _bebou2 = alloc::boxed::Box::new([1 as u8;400]);
-    drop(_bebou2);
+    dbg!("========================== END"); 
     loop {}
 }

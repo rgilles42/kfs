@@ -1,11 +1,11 @@
-use core::borrow::{BorrowMut, Borrow};
+use core::borrow::BorrowMut;
 use super::{KernelAllocator, AllocError};
 use crate::memory::{pmm, PAGE_SIZE};
 use crate::memory::vmm::mapper;
 use crate::ROUND_PAGE_UP;
 use alloc::alloc::{Layout, GlobalAlloc};
 use core::mem::size_of;
-use crate::{printk, align_up, align_down, is_aligned, print};
+use crate::is_aligned;
 use super::Lock;
 use core::fmt;
 use crate::dbg;
@@ -96,11 +96,18 @@ impl ListAllocator
             // this tells us if the block to free is between current and current.next
             if next.addr() > block.addr() {
                 if ca == head_address {
-                    block.next = current.next.take();
-                    // Goto first block
-                    current.next = Some(block);
-                    current = current.next.as_mut().unwrap();
-                    // TODO coalesce with next ?
+                    if block.addr() + block.size == next.addr() {
+                        block.size += next.size;
+                        block.next = next.next.take();
+                        current.next = Some(block);
+                    }
+                    else {
+                        block.next = current.next.take();
+                        // Goto first block
+                        current.next = Some(block);
+                        current = current.next.as_mut().unwrap();
+                    }
+
                 }
                 else if ca + current.size == block.addr() {
                     current.size += block.size;
@@ -115,13 +122,13 @@ impl ListAllocator
                     block.next = tmp;
                     current.next = Some(block);
                 }
-                // If the last free block is at the heap's end, unmap pages if we can
-                if current.next.is_none() && current.addr() + current.size == self.memstart + self.heapsize {
-                    let start = if is_aligned!(current.addr(), PAGE_SIZE) { current.addr() } else {ROUND_PAGE_UP!(current.addr())};
-                    let npages = current.size / PAGE_SIZE;
-                    let _ = mapper::unmap_range_kernel(start, npages);
-                    current.size -= npages * PAGE_SIZE;
-                }
+                // // If the last free block is at the heap's end, unmap pages if we can
+                // if current.next.is_none() && current.addr() + current.size == self.memstart + self.heapsize {
+                //     let start = if is_aligned!(current.addr(), PAGE_SIZE) { current.addr() } else {ROUND_PAGE_UP!(current.addr())};
+                //     let npages = current.size / PAGE_SIZE;
+                //     let _ = mapper::unmap_range_kernel(start, npages);
+                //     current.size -= npages * PAGE_SIZE;
+                // }
                 return;
             }
             current = current.next.as_mut().unwrap(); // TODO don't really understand this line
@@ -164,15 +171,10 @@ impl ListAllocator
                     return Ok(ret);
                 }
             }
-            current = current.next.as_mut().unwrap(); // TODO don't really understand this line
+            current = current.next.as_mut().unwrap();
         }
-        // At this point no match was found
-        // If the current node has a size superior to 0, we can map the difference
-        // if current.size > 0 {
-        //     TODO
-        // }
 
-        // else we have to map enough page for the whole size
+        // If we arrive here, we have to map more pages for the new block
         // we need to align in case the leftover allocation needs another block
         let total = ROUND_PAGE_UP!(new_size + core::mem::align_of::<BlockInfo>());
         let start = self.memstart + self.heapsize;
@@ -223,14 +225,14 @@ impl ListAllocator
 
     pub fn print_list(&self)
     {
-        dbg!("Block list");
+        dbg!("Block list, heapsize({})", self.heapsize);
         dbg!("head {:^10p}", &self.head as *const BlockInfo);
         let mut current = &self.head.next;
         let mut i = 0;
         loop {
             match current {
                 Some(b) => {
-                    dbg!("B{:^4} {:^4} {:p}", i, b.size, *b as *const BlockInfo);
+                    dbg!("B{:^4} {:^4} {:p} to 0x{:x}", i, b.size, *b as *const BlockInfo, *b as *const BlockInfo as usize + b.size);
                     current = &b.next; 
                 }
                 None => break
@@ -249,7 +251,7 @@ unsafe impl GlobalAlloc for Lock<ListAllocator>
     {
         let alloc = self.get();
         dbg!("*** alloc : {}", layout.size());
-        let (size, align) = ListAllocator::adjust_layout(layout);
+        let (size, _align) = ListAllocator::adjust_layout(layout);
         match alloc.alloc_block(size + size_of::<BlockInfo>()) { // TODO better alignment
             // management
             Ok(b) => {

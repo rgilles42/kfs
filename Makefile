@@ -40,6 +40,8 @@ re: clean all
 
 run: iso
 	$(QEMU) -cdrom kfs.iso -no-reboot -serial stdio
+run_int: iso
+	$(QEMU) -cdrom kfs.iso -no-reboot -serial stdio -d int,cpu_reset
 
 run_kernel: $(NAME)
 	$(QEMU) -kernel $(NAME) -no-reboot
