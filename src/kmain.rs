@@ -92,6 +92,7 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
     vmm::init(memstart, arch::KERNEL_PAGE_TABLES_START - kend);
 
     {
+        printk!("========================== MEMORY TESTING"); 
         dbg!("========================== MEMORY TESTING"); 
         let a = alloc::string::String::from("Moi je suis en pleine forme");
         let _vec_test = vec![1;100];
@@ -116,6 +117,6 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
 
     printk!("=========================== PANIC TEST"); 
     dbg!("=========================== PANIC TEST"); 
-    panic!("Oh no we are panicking !");
+    panic!();
     loop {}
 }

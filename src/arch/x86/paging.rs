@@ -30,52 +30,31 @@ extern "C" {
     static EARLY_PAGE_DIRECTORY: PageDir;
 }
 
-// bitflags! {
-//     #[derive(Copy, Clone)]
-//     pub struct PDEF : usize {
-//         const Present = 1;
-//         const Write = 1 << 1;
-//         const User = 1 << 2;
-//         const WriteThrough = 1 << 3;
-//         const CacheDisable = 1 << 4;
-//         const Accessed = 1 << 5;
-//         const Available = 1 << 6;
-//         const PageSize = 1 << 7;
-//         const _ = !0;
-//     }
-// }
+#[allow(dead_code)]
+mod pdef {
+    pub const PRESENT: usize = 1;
+    pub const WRITE: usize = 1 << 1;
+    pub const USER: usize = 1 << 2;
+    pub const WRITETHROUGH: usize = 1 << 3;
+    pub const CACHEDISABLE: usize = 1 << 4;
+    pub const ACCESSED: usize = 1 << 5;
+    pub const AVAILABLE: usize = 1 << 6;
+    pub const PAGESIZE: usize = 1 << 7;
+}
 
-// bitflags! {
-//     #[derive(Copy, Clone)]
-//     pub struct PTEF : u32 {
-//         const Present = 1;
-//         const Write = 1 << 1;
-//         const User = 1 << 2;
-//         const WriteThrough = 1 << 3;
-//         const CacheDisable = 1 << 4;
-//         const Accessed = 1 << 5;
-//         const Dirty = 1 << 6;
-//         const PageAttribute = 1 << 7;
-//         const Global = 1 << 8;
-//         const _ = !0;
-//     }
-// }
+#[allow(dead_code)]
+mod ptef {
+    pub const PRESENT: usize = 1;
+    pub const WRITE: usize = 1 << 1;
+    pub const USER: usize = 1 << 2;
+    pub const WRITETHROUGH: usize = 1 << 3;
+    pub const CACHEDISABLE: usize = 1 << 4;
+    pub const ACCESSED: usize = 1 << 5;
+    pub const DIRTY: usize = 1 << 6;
+    pub const PAT: usize = 1 << 7;
+    pub const GLOBAL: usize = 1 << 8;
+}
 
-// bitflags! {
-//     #[derive(Copy, Clone)]
-//     pub struct PF : u32
-//     {
-//         const P = 1 << 0;
-//         const W = 1 << 1;
-//         const U = 1 << 2;
-//         const R = 1 << 3;
-//         const I = 1 << 4;
-//         const PK = 1 << 5;
-//         const SS = 1 << 6;
-//         const SGX = 1 << 7;
-//         const _ = !0;
-//     }
-// }
 
 type PDE = usize;
 type PTE = usize;
@@ -170,9 +149,9 @@ impl mapper::MapperInterface for PageDir
         let index = pde_index!(address);
         let pt = unsafe {&mut(*get_kernel_pt(index))};
         if self.entries[index] == 0 {
-            self.entries[index] = self.virt_to_phys(pt as *const PageTable as usize).unwrap() | 3;
+            self.entries[index] = self.virt_to_phys(pt as *const PageTable as usize).unwrap() | pdef::PRESENT | pdef::WRITE;
         }
-        pt.entries[pte_index!(address)] = phys_address | 3;
+        pt.entries[pte_index!(address)] = phys_address | ptef::PRESENT | ptef::WRITE ;
         flush_tlb();
         Ok(())
     }
@@ -271,7 +250,7 @@ pub fn init_post_jump()
             // be initialized, which itself needs paging (what we are doing right now you dingus)
             let start = range.start.0;
             for i in 0..range.size { 
-                KERNEL_PT_TEMP[i] = start + i * PAGE_SIZE | 3; // TODO better flags
+                KERNEL_PT_TEMP[i] = start + i * PAGE_SIZE | ptef::PRESENT | ptef::WRITE; // TODO better flags
             }
             // flush the tlb one last time so that the new table is updated
             flush_tlb();
