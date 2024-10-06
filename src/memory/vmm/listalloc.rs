@@ -28,6 +28,15 @@ impl KernelAllocator for ListAllocator
         self.memstart = memstart; 
         self.heapmax = heapmax;
     }
+
+    fn get_alloc_size(&mut self, ptr: *const u8) -> usize {
+        let block_address = ptr as usize - core::mem::size_of::<BlockInfo>();
+        unsafe {
+            let block: &mut BlockInfo =  &mut*(block_address as *mut BlockInfo);
+            block.size - core::mem::size_of::<BlockInfo>()
+        }
+    }
+
 }
 
 /// Metadata about free block

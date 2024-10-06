@@ -108,10 +108,16 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
         for i in 0..10 {
             printk!("{:x}", _vec_test[i]);
         }
-        let _bebou2 = alloc::boxed::Box::new([1 as u8;400]);
+
+        printk!("Allocating bebou2 of size 400");
+        let bebou2 = alloc::boxed::Box::new([1 as u8;400]);
         {
             let _vec_test3 = vec![1;100000];
         }
+
+        let ptr = bebou2.as_ptr();
+        let size = crate::vmm::get_alloc_size(ptr);
+        printk!("Reading size of bebou2 {}", size);
     }
 
     printk!("=========================== PANIC TEST"); 

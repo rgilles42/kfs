@@ -44,6 +44,12 @@ pub trait KernelAllocator
     /// Initialize the allocator on a virtual region starting at @memstart, with @size, and a
     /// @base_pages number to allocate to start with
     fn init(&mut self, memstart: usize, heapsize: usize);
+    fn get_alloc_size(&mut self, ptr: *const u8) -> usize;
+}
+
+pub fn get_alloc_size(ptr: *const u8) -> usize
+{
+    unsafe {ALLOCATOR.get().get_alloc_size(ptr)}
 }
 
 #[inline(always)]
