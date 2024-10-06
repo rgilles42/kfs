@@ -46,7 +46,7 @@ run_int: iso
 run_kernel: $(NAME)
 	$(QEMU) -kernel $(NAME) -no-reboot
 
-run_debug: $(NAME)
-	$(QEMU) -kernel $(NAME) -s -S -no-reboot -d int,cpu_reset
+run_debug: iso
+	$(QEMU) -cdrom kfs.iso -s -S -nographic -no-reboot -d int,cpu_reset
 
 .PHONY: clean run run_kernel run_debug $(KLIB)

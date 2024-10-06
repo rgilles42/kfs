@@ -1,9 +1,11 @@
 target remote localhost:1234
+set disassembly-flavor intel
 
-break *0x101054
-break *0x10100f
-break *0x01010aa
-break *0x01010ab
-break *0x0
-continue
+layout split
 
+break panic_inner
+commands 
+	break *0xc017ee0f 
+	c
+end
+c
