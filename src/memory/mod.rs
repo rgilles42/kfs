@@ -3,8 +3,6 @@ pub mod vmm;
 
 use core::fmt;
 
-use crate::printk;
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RegionType
 {

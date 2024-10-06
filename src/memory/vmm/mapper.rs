@@ -39,12 +39,14 @@ pub fn virt_to_phys_kernel(address: usize) -> Option<usize> {
 
 /// Unmap a single frame
 #[inline(always)]
+#[allow(dead_code)]
 pub fn unmap_single_kernel(address: usize) -> Result<(), ()> {
     kernel_mapper().unmap_single(address)
 }
 
 /// Unmap a virtual frame range
 #[inline(always)]
+#[allow(dead_code)]
 pub fn unmap_range_kernel(address: usize, n: usize) -> Result<(), ()> {
     kernel_mapper().unmap_range(address, n)
 }

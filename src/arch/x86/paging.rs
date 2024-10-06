@@ -134,9 +134,7 @@ macro_rules! is_page_aligned {
 fn get_kernel_pt(index: usize) -> *mut PageTable
 {
     let ptr: *mut PageTable;
-    unsafe {
-        ptr = (KERNEL_PAGE_TABLES_START + index * core::mem::size_of::<PageTable>()) as *mut PageTable;
-    }
+    ptr = (KERNEL_PAGE_TABLES_START + index * core::mem::size_of::<PageTable>()) as *mut PageTable;
     ptr
 }
 
@@ -173,7 +171,7 @@ impl mapper::MapperInterface for PageDir
     fn unmap_range(&mut self, address: usize, npages: usize) -> Result<(), ()> {
         let mut ptr = address;
         for _i in 0..npages {
-            self.unmap_single(ptr);
+            let _ = self.unmap_single(ptr);
             ptr += PAGE_SIZE;
         }
         Ok(())

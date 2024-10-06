@@ -208,6 +208,7 @@ impl ListAllocator
     }
 
     /// Decrease current heap size by a number of pages
+    #[allow(dead_code)]
     fn decrease_heap(&mut self, npages: usize)
     {
         mapper::unmap_range_kernel(self.memstart + self.heapsize - npages * PAGE_SIZE, npages).expect("Failed to decrease kernel heap");

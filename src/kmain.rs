@@ -9,7 +9,6 @@ mod utils;
 mod serial;
 
 use core::panic::PanicInfo;
-use crate::multiboot::parse_mboot_info;
 use crate::arch::gdt;
 use crate::arch::paging;
 
@@ -39,7 +38,7 @@ pub extern "C" fn kmain(magic: u32, mboot: *const u32) -> ! {
 	vga::setup_io();
 	gdt::load();
 	dbg!("Mutilboot: magic({:x}) mboot({:p})", magic, mboot);
-	dbg!("/*******************/\n/* VGA Output Demo */\n/*******************/");
+	printk!("/*******************/\n/* VGA Output Demo */\n/*******************/");
 	printk!("According to \x1b\x06\x00all laws \x1b\x01\x00of aviation, \x1b\x04\x00there is \x1b\x0d\x00no way \x1b\x0c\x00that a \x1b\x00\x0fbee should \x1b\x04\x0ebe able \x1b\x07\x03to fly\x1b\x0f\x00");
 	// demo_stackframe();
     printk!("VGA initialized");

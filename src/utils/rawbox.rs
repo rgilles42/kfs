@@ -9,12 +9,10 @@ impl<T> RawBox<T>
 {
     pub fn new(s: T) -> Self
     {
-        unsafe {
-            // let pointer = BUMP_ALLOCATOR.allocate(core::mem::size_of::<T>());
-            let pointer = 0 as *mut T; // TODO allocate ?
-            // TODO memcpy
-            RawBox { data : pointer as *mut T }
-        }
+        // let pointer = BUMP_ALLOCATOR.allocate(core::mem::size_of::<T>());
+        let pointer = 0 as *mut T; // TODO allocate ?
+        // TODO memcpy
+        RawBox { data : pointer as *mut T }
     }
 
     pub fn from_ptr(ptr: *const T) -> Self

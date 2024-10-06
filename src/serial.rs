@@ -60,7 +60,6 @@ pub trait PortIO {
     fn write(&self, op: Self::Op);
 }
 
-
 impl<T> Pio<T> {
     pub const fn new(port: u16) -> Self {
         Pio {

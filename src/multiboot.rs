@@ -287,20 +287,17 @@ fn parse_memory_map(info : &MultibootInfo)
 {
   let nentries = info.mmap_length as usize / core::mem::size_of::<MultibootMmapEntry>();
 
-  printk!("Memory map has {} entries", nentries);
   let mut ptr = info.mmap_addr as *const MultibootMmapEntry;
   
   // Used to check if memory is contiguous
   // TODO handle non contiguous memory
-  let mut next_start: usize = 0;
-  for i in 0..nentries
+  for _ in 0..nentries
   {
       unsafe {
         let entry = ptr.read_unaligned();
-      // if the memory is usable
+        // if the memory is usable
         // assert!(next_start == entry.addr as usize, "The physical memory is not contiguous !");
         // next_start += entry.len as usize;
-        printk!("Adding a region " );
         memory::phys_mem().add_entry(
           memory::PhysicalRegion::new(entry.addr as usize, entry.len as usize, entry.type_ as usize));
         ptr = ptr.offset(1);
